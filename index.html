@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="자기관리">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>자기관리 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #555;
+    --accent: #c8f565;
+    --accent-dim: rgba(200,245,101,0.12);
+    --red: #ff5f5f;
+    --red-dim: rgba(255,95,95,0.12);
+    --amber: #ffb547;
+    --amber-dim: rgba(255,181,71,0.12);
+    --blue: #5b9cf6;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; font-size: 15px; overflow: hidden; }
+  #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+  /* Header */
+  .header { padding: 52px 20px 16px; display: flex; align-items: flex-end; justify-content: space-between; flex-shrink: 0; }
+  .header-title { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; }
+  .header-date { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text2); }
+
+  /* Scroll area */
+  .scroll-area { flex: 1; overflow-y: auto; padding: 0 16px 100px; -webkit-overflow-scrolling: touch; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 10px; }
+  .card-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; color: var(--text3); text-transform: uppercase; margin-bottom: 14px; }
+
+  /* Sleep row */
+  .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .time-field label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 5px; }
+  .time-field input[type=time] {
+    width: 100%; background: var(--surface2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 18px;
+    font-family: 'DM Mono', monospace; font-weight: 500; padding: 10px 12px;
+    -webkit-appearance: none; appearance: none;
+  }
+
+  /* Slider */
+  .slider-wrap { margin-bottom: 12px; }
+  .slider-wrap:last-child { margin-bottom: 0; }
+  .slider-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .slider-head span { font-size: 13px; color: var(--text2); }
+  .slider-val { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); font-weight: 500; }
+  input[type=range] {
+    width: 100%; height: 3px; -webkit-appearance: none; appearance: none;
+    background: var(--border2); border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+  }
+
+  /* Toggle rows */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .t-label { font-size: 14px; color: var(--text); }
+  .t-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .tog-group { display: flex; gap: 5px; }
+  .tog {
+    padding: 5px 12px; font-size: 12px; border-radius: 20px;
+    border: 0.5px solid var(--border2); cursor: pointer; background: none;
+    color: var(--text2); font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.15s;
+  }
+  .tog.on-good { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+  .tog.on-bad { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .tog.on-mid { background: var(--amber-dim); color: var(--amber); border-color: var(--amber); }
+
+  /* Memo */
+  textarea {
+    width: 100%; background: var(--surface2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif; padding: 12px; resize: none;
+    min-height: 80px; line-height: 1.6;
+  }
+  textarea::placeholder { color: var(--text3); }
+
+  /* Save btn */
+  .save-btn {
+    width: 100%; padding: 16px; font-size: 15px; font-weight: 700;
+    background: var(--accent); color: #0a0a0a; border: none;
+    border-radius: var(--radius); cursor: pointer; margin-top: 4px;
+    font-family: 'Noto Sans KR', sans-serif; letter-spacing: 0.02em;
+    transition: opacity 0.15s;
+  }
+  .save-btn:active { opacity: 0.8; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,10,10,0.92); backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 0.5px solid var(--border); padding: 10px 0 24px;
+    display: flex;
+  }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; background: none; border: none; padding: 6px 0; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: var(--text3); font-family: 'Noto Sans KR', sans-serif; }
+  .nav-btn.active .nav-label { color: var(--accent); }
+  .nav-btn.active .nav-icon { filter: none; }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Metrics grid */
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .metric-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .m-label { font-size: 10px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .m-val { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
+  .m-unit { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* Streak */
+  .streak-grid { display: flex; gap: 4px; flex-wrap: wrap; }
+  .s-dot { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; flex-direction: column; padding-bottom: 3px; }
+  .s-dot span { font-size: 8px; color: rgba(255,255,255,0.4); font-family: 'DM Mono', monospace; }
+  .dot-good { background: var(--accent-dim); border: 0.5px solid var(--accent); }
+  .dot-bad { background: var(--red-dim); border: 0.5px solid var(--red); }
+  .dot-none { background: var(--surface2); border: 0.5px solid var(--border); }
+
+  /* AI section */
+  .api-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .api-row input {
+    flex: 1; background: var(--surface2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 13px;
+    padding: 10px 12px; font-family: 'DM Mono', monospace;
+  }
+  .ai-btn {
+    padding: 10px 16px; font-size: 13px; font-weight: 700;
+    background: var(--accent); color: #0a0a0a; border: none;
+    border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .ai-btn:disabled { opacity: 0.4; }
+  .ai-result {
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 16px; font-size: 14px; line-height: 1.8; color: var(--text2);
+    min-height: 120px; white-space: pre-wrap; border: 0.5px solid var(--border);
+  }
+  .ai-status { font-size: 11px; color: var(--text3); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+
+  /* History */
+  .history-item { padding: 14px 0; border-bottom: 0.5px solid var(--border); }
+  .history-item:last-child { border-bottom: none; }
+  .h-date { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+  .h-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { font-size: 11px; padding: 3px 9px; border-radius: 12px; }
+  .chip-g { background: var(--accent-dim); color: var(--accent); }
+  .chip-b { background: var(--red-dim); color: var(--red); }
+  .chip-m { background: var(--amber-dim); color: var(--amber); }
+  .h-memo { font-size: 12px; color: var(--text3); margin-top: 5px; line-height: 1.5; }
+  .empty { text-align: center; padding: 3rem; color: var(--text3); font-size: 13px; line-height: 1.8; }
+
+  /* Score ring */
+  .score-wrap { display: flex; align-items: center; gap: 16px; padding: 16px 0; }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 8; }
+  .ring-fg { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+  .score-text { font-size: 36px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+  .score-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #0a0a0a; padding: 10px 20px;
+    border-radius: 30px; font-size: 13px; font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif; z-index: 999;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-title">자기관리 시스템</div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- 오늘 기록 -->
+    <div id="sec-input" class="section active">
+
+      <div class="card">
+        <div class="card-label">수면</div>
+        <div class="time-row">
+          <div class="time-field">
+            <label>취침</label>
+            <input type="time" id="sleep-time" value="23:00">
+          </div>
+          <div class="time-field">
+            <label>기상</label>
+            <input type="time" id="wake-time" value="07:00">
+          </div>
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span>수면 질</span>
+            <span class="slider-val" id="sq-out">5</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" id="sleep-q" oninput="document.getElementById('sq-out').textContent=this.value">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">컨디션</div>
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span>스트레스 지수</span>
+            <span class="slider-val" id="st-out">5</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" id="stress" oninput="document.getElementById('st-out').textContent=this.value">
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-head">
+            <span>에너지 레벨</span>
+            <span class="slider-val" id="en-out">5</span>
+          </div>
+          <input type="range" min="1" max="10" value="5" id="energy" oninput="document.getElementById('en-out').textContent=this.value">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">행동 체크</div>
+        <div class="toggle-row">
+          <div><div class="t-label">운동</div><div class="t-sub">러닝 / 헬스 등</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="exercise" data-v="O" data-c="good" onclick="tog(this)">O</button>
+            <button class="tog" data-k="exercise" data-v="X" data-c="bad" onclick="tog(this)">X</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-label">식단</div><div class="t-sub">야채 / 균형 잡힌 식사</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="diet" data-v="O" data-c="good" onclick="tog(this)">O</button>
+            <button class="tog" data-k="diet" data-v="X" data-c="bad" onclick="tog(this)">X</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-label">과식</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="overeat" data-v="없음" data-c="good" onclick="tog(this)">없음</button>
+            <button class="tog" data-k="overeat" data-v="1회" data-c="mid" onclick="tog(this)">1회</button>
+            <button class="tog" data-k="overeat" data-v="2+" data-c="bad" onclick="tog(this)">2+</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-label">음주</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="alcohol" data-v="없음" data-c="good" onclick="tog(this)">없음</button>
+            <button class="tog" data-k="alcohol" data-v="1-2잔" data-c="mid" onclick="tog(this)">1-2잔</button>
+            <button class="tog" data-k="alcohol" data-v="과음" data-c="bad" onclick="tog(this)">과음</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-label">포르노</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="porn" data-v="X" data-c="good" onclick="tog(this)">X</button>
+            <button class="tog" data-k="porn" data-v="O" data-c="bad" onclick="tog(this)">O</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-label">유튜브 / SNS</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="yt" data-v="1h미만" data-c="good" onclick="tog(this)">1h미만</button>
+            <button class="tog" data-k="yt" data-v="1-2h" data-c="mid" onclick="tog(this)">1-2h</button>
+            <button class="tog" data-k="yt" data-v="3h+" data-c="bad" onclick="tog(this)">3h+</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-label">자기계발</div><div class="t-sub">독서 / 공부</div></div>
+          <div class="tog-group">
+            <button class="tog" data-k="dev" data-v="O" data-c="good" onclick="tog(this)">O</button>
+            <button class="tog" data-k="dev" data-v="X" data-c="bad" onclick="tog(this)">X</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">오늘 한줄</div>
+        <textarea id="memo" placeholder="오늘 하루를 한 줄로..."></textarea>
+      </div>
+
+      <button class="save-btn" onclick="saveEntry()">오늘 기록 저장</button>
+    </div>
+
+    <!-- 분석 -->
+    <div id="sec-analysis" class="section">
+      <div class="card">
+        <div class="card-label">오늘의 점수</div>
+        <div class="score-wrap">
+          <svg width="80" height="80" class="ring-svg">
+            <circle class="ring-bg" cx="40" cy="40" r="32"/>
+            <circle class="ring-fg" id="score-ring" cx="40" cy="40" r="32" stroke-dasharray="201" stroke-dashoffset="201"/>
+          </svg>
+          <div>
+            <div class="score-text" id="score-num">—</div>
+            <div class="score-sub" id="score-label">기록을 저장하면 점수가 계산돼요</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric-card"><div class="m-label">이번주 운동</div><div class="m-val" id="m-ex">—</div><div class="m-unit">일 / 7일</div></div>
+        <div class="metric-card"><div class="m-label">평균 수면</div><div class="m-val" id="m-sl">—</div><div class="m-unit">시간</div></div>
+        <div class="metric-card"><div class="m-label">평균 스트레스</div><div class="m-val" id="m-st">—</div><div class="m-unit">/ 10</div></div>
+        <div class="metric-card"><div class="m-label">과식 횟수</div><div class="m-val" id="m-ov">—</div><div class="m-unit">회 / 7일</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">운동 스트릭 · 14일</div>
+        <div class="streak-grid" id="streak"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">AI 분석 · Anthropic API</div>
+        <div class="api-row">
+          <input type="password" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+          <button class="ai-btn" id="ai-btn" onclick="runAI()">분석</button>
+        </div>
+        <div class="ai-status" id="ai-status">API 키를 입력하고 분석을 실행하세요.</div>
+        <div class="ai-result" id="ai-result">최근 7일 데이터를 기반으로 뇌과학 코치가 분석합니다.</div>
+      </div>
+    </div>
+
+    <!-- 히스토리 -->
+    <div id="sec-history" class="section">
+      <div class="card">
+        <div class="card-label">기록 목록</div>
+        <div id="history-list"><div class="empty">아직 기록이 없어요.<br>오늘 기록부터 시작해보세요.</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="nav('input', this)">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">오늘 기록</span>
+    </button>
+    <button class="nav-btn" onclick="nav('analysis', this)">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">분석</span>
+    </button>
+    <button class="nav-btn" onclick="nav('history', this)">
+      <span class="nav-icon">🗂</span>
+      <span class="nav-label">히스토리</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const state = { toggles: {} };
+
+// Date
+const now = new Date();
+document.getElementById('header-date').textContent =
+  now.getFullYear() + '.' +
+  String(now.getMonth()+1).padStart(2,'0') + '.' +
+  String(now.getDate()).padStart(2,'0');
+
+// Nav
+function nav(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'analysis') { updateMetrics(); updateScore(); renderStreak(); }
+  if (name === 'history') renderHistory();
+}
+
+// Toggle
+function tog(btn) {
+  const k = btn.dataset.k, c = btn.dataset.c;
+  document.querySelectorAll('[data-k="' + k + '"]').forEach(b => b.classList.remove('on-good','on-bad','on-mid'));
+  btn.classList.add('on-' + c);
+  state.toggles[k] = btn.dataset.v;
+}
+
+// Sleep calc
+function sleepHours(s, w) {
+  if (!s || !w) return null;
+  const [sh,sm] = s.split(':').map(Number), [wh,wm] = w.split(':').map(Number);
+  let m = (wh*60+wm) - (sh*60+sm);
+  if (m < 0) m += 1440;
+  return +(m/60).toFixed(1);
+}
+
+// Score
+function calcScore(entry) {
+  let score = 60;
+  const t = entry.toggles || {};
+  if (t.exercise === 'O') score += 10;
+  if (t.diet === 'O') score += 5;
+  if (t.overeat === '없음') score += 5; else if (t.overeat === '2+') score -= 5;
+  if (t.alcohol === '없음') score += 5; else if (t.alcohol === '과음') score -= 10;
+  if (t.porn === 'X') score += 5; else if (t.porn === 'O') score -= 10;
+  if (t.yt === '1h미만') score += 5; else if (t.yt === '3h+') score -= 5;
+  if (t.dev === 'O') score += 5;
+  const h = entry.sleepHours;
+  if (h >= 7 && h <= 9) score += 5; else if (h < 6) score -= 5;
+  if (parseInt(entry.stress) >= 8) score -= 5;
+  return Math.max(0, Math.min(100, score));
+}
+
+function updateScore() {
+  const entries = getEntries();
+  const today = new Date().toISOString().slice(0,10);
+  const e = entries.find(x => x.date === today);
+  if (!e) return;
+  const s = calcScore(e);
+  document.getElementById('score-num').textContent = s;
+  const circ = 2 * Math.PI * 32;
+  const offset = circ - (s / 100) * circ;
+  document.getElementById('score-ring').style.strokeDashoffset = offset.toFixed(1);
+  const labels = ['회복이 필요해', '조금 흔들렸어', '평균이야', '잘 하고 있어', '완벽한 하루!'];
+  document.getElementById('score-label').textContent = labels[Math.floor(s/20)] || '잘 하고 있어';
+  const color = s >= 80 ? '#c8f565' : s >= 60 ? '#ffb547' : '#ff5f5f';
+  document.getElementById('score-ring').style.stroke = color;
+  document.getElementById('score-num').style.color = color;
+}
+
+// Save
+function saveEntry() {
+  const today = new Date().toISOString().slice(0,10);
+  const entry = {
+    date: today,
+    sleepTime: document.getElementById('sleep-time').value,
+    wakeTime: document.getElementById('wake-time').value,
+    sleepQ: document.getElementById('sleep-q').value,
+    stress: document.getElementById('stress').value,
+    energy: document.getElementById('energy').value,
+    toggles: { ...state.toggles },
+    memo: document.getElementById('memo').value,
+    sleepHours: sleepHours(document.getElementById('sleep-time').value, document.getElementById('wake-time').value)
+  };
+  const entries = getEntries();
+  const idx = entries.findIndex(e => e.date === today);
+  if (idx >= 0) entries[idx] = entry; else entries.unshift(entry);
+  localStorage.setItem('sm_entries', JSON.stringify(entries));
+  showToast('저장됐어 💪');
+}
+
+function getEntries() { return JSON.parse(localStorage.getItem('sm_entries') || '[]'); }
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Metrics
+function updateMetrics() {
+  const e7 = getEntries().slice(0,7);
+  if (!e7.length) return;
+  const exC = e7.filter(e => e.toggles.exercise === 'O').length;
+  const ovC = e7.reduce((a,e) => a + (e.toggles.overeat === '2+' ? 2 : e.toggles.overeat === '1회' ? 1 : 0), 0);
+  const slA = e7.filter(e => e.sleepHours).reduce((a,e,_,arr) => a + e.sleepHours/arr.length, 0);
+  const stA = e7.reduce((a,e,_,arr) => a + Number(e.stress)/arr.length, 0);
+  document.getElementById('m-ex').textContent = exC;
+  document.getElementById('m-ov').textContent = ovC;
+  document.getElementById('m-sl').textContent = slA ? slA.toFixed(1) : '—';
+  document.getElementById('m-st').textContent = stA ? stA.toFixed(1) : '—';
+}
+
+// Streak
+function renderStreak() {
+  const bar = document.getElementById('streak');
+  bar.innerHTML = '';
+  const all = getEntries(), map = {};
+  all.forEach(e => map[e.date] = e);
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    const e = map[key];
+    const dot = document.createElement('div');
+    dot.className = 'streak-dot s-dot ' + (e ? (e.toggles.exercise === 'O' ? 'dot-good' : 'dot-bad') : 'dot-none');
+    dot.innerHTML = '<span>' + String(d.getDate()).padStart(2,'0') + '</span>';
+    bar.appendChild(dot);
+  }
+}
+
+// History
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const entries = getEntries();
+  if (!entries.length) { list.innerHTML = '<div class="empty">아직 기록이 없어요.</div>'; return; }
+  list.innerHTML = entries.slice(0,30).map(e => {
+    const t = e.toggles || {};
+    const chips = [];
+    if (t.exercise === 'O') chips.push('<span class="chip chip-g">운동O</span>');
+    else if (t.exercise === 'X') chips.push('<span class="chip chip-b">운동X</span>');
+    if (t.porn === 'O') chips.push('<span class="chip chip-b">포르노</span>');
+    if (t.alcohol === '과음') chips.push('<span class="chip chip-b">과음</span>');
+    if (t.overeat === '2+') chips.push('<span class="chip chip-b">과식</span>');
+    if (t.dev === 'O') chips.push('<span class="chip chip-g">자기계발</span>');
+    if (e.sleepHours) chips.push('<span class="chip chip-m">수면 ' + e.sleepHours + 'h</span>');
+    const score = calcScore(e);
+    chips.push('<span class="chip chip-g" style="margin-left:auto">' + score + '점</span>');
+    return '<div class="history-item"><div class="h-date">' + e.date + '</div><div class="h-chips">' + chips.join('') + '</div>' +
+      (e.memo ? '<div class="h-memo">' + e.memo + '</div>' : '') + '</div>';
+  }).join('');
+}
+
+// AI
+async function runAI() {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) { showToast('API 키를 입력해줘'); return; }
+  const entries = getEntries().slice(0,7);
+  if (!entries.length) { showToast('먼저 기록을 저장해줘'); return; }
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true; btn.textContent = '…';
+  document.getElementById('ai-status').textContent = '분석 중...';
+  document.getElementById('ai-result').textContent = '';
+
+  const summary = entries.map(e => {
+    const t = e.toggles || {};
+    return `${e.date} | 수면 ${e.sleepHours||'?'}h 질${e.sleepQ}/10 | 스트레스${e.stress}/10 에너지${e.energy}/10 | 운동:${t.exercise||'?'} 식단:${t.diet||'?'} 과식:${t.overeat||'?'} 음주:${t.alcohol||'?'} 포르노:${t.porn||'?'} 유튜브:${t.yt||'?'} 자기계발:${t.dev||'?'}` + (e.memo ? ` | "${e.memo}"` : '');
+  }).join('\n');
+
+  const prompt = `당신은 뇌과학·행동과학 기반의 자기관리 코치입니다. 아래는 사용자의 최근 자기관리 데이터입니다.
+
+${summary}
+
+다음 구조로 분석해주세요:
+① 현재 상태 진단 (무너진 영역 명시)
+② 가장 위험한 패턴 1가지 (도파민, 스트레스, 수면 등 과학적으로 설명)
+③ 이번 주 회복을 위한 즉시 실행 가능한 행동 2가지 (아주 작고 구체적으로)
+④ 따뜻한 격려 한마디
+
+솔직하고 따뜻하게, 350자 내외로 답해주세요.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 700, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    if (data.content?.[0]?.text) {
+      document.getElementById('ai-result').textContent = data.content[0].text;
+      document.getElementById('ai-status').textContent = '분석 완료 · ' + new Date().toLocaleTimeString('ko-KR');
+    } else {
+      document.getElementById('ai-result').textContent = 'API 오류가 발생했어. 키를 확인해줘.\n' + JSON.stringify(data);
+      document.getElementById('ai-status').textContent = '오류';
+    }
+  } catch (err) {
+    document.getElementById('ai-result').textContent = '요청 실패: ' + err.message;
+    document.getElementById('ai-status').textContent = '오류';
+  }
+  btn.disabled = false; btn.textContent = '분석';
+}
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/Self-management/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
